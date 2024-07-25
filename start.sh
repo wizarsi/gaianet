@@ -2,7 +2,7 @@
 
 for (( ; ; ))
 do
-    file="pheases.txt"
+    file="phrases.txt"
     # file="debug_phrases.txt"
     url="https://0x0aa110d2e3a2f14fc122c849cea06d1bc9ed1c62.us.gaianet.network/v1/chat/completions"
 
