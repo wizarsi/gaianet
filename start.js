@@ -3,7 +3,7 @@
 const fs = require('fs').promises;
 const https = require('https');
 
-const pathToFile = 'debug_phrases.txt';
+const pathToFile = 'phrases.txt';
 const url = 'https://0x0aa110d2e3a2f14fc122c849cea06d1bc9ed1c62.us.gaianet.network/v1/chat/completions';
 
 async function readFile(path) {
