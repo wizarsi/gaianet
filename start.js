@@ -3,8 +3,9 @@
 const fs = require('fs').promises;
 const https = require('https');
 
-const pathToFile = 'phrases.txt';
-const url = 'https://0x0aa110d2e3a2f14fc122c849cea06d1bc9ed1c62.us.gaianet.network/v1/chat/completions';
+const data = require ('./config.json');
+const pathToFile = data["pathToFile_debug"],
+    url = data["url"];
 
 async function readFile(path) {
   try {
