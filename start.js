@@ -4,7 +4,7 @@ const fs = require('fs').promises;
 const https = require('https');
 
 const data = require ('./config.json');
-const pathToFile = data["pathToFile_debug"],
+const pathToFile = data["pathToFile"],
     url = data["url"];
 
 async function readFile(path) {
