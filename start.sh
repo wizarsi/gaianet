@@ -1,16 +1,18 @@
 #!/bin/bash
 
 # File containing phrases
-file="phrases.txt"
+# shellcheck disable=SC2207
+file=($(jq -r '.pathToFile' config.json))
 # Alternative debug file
 # file="debug_phrases.txt"
 
 # URL for the API
-url="https://0x0aa110d2e3a2f14fc122c849cea06d1bc9ed1c62.us.gaianet.network/v1/chat/completions"
+url=($(jq -r '.url' config.json))
 
 # Function to send the API request
 send_request() {
     local line=$1
+    # shellcheck disable=SC2128
     curl -X POST "$url" \
         -H 'accept: application/json' \
         -H 'Content-Type: application/json' \
@@ -20,6 +22,7 @@ send_request() {
 
 # Infinite loop to repeatedly read the file and send requests
 while true; do
+    # shellcheck disable=SC2128
     if [[ -f $file ]]; then
         while IFS= read -r line; do
             send_request "$line"
