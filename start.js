@@ -60,11 +60,6 @@ function postToNode(phrase) {
 
 let isRunning = true;
 
-process.on('SIGINT', () => {
-  console.log('\nGracefully shutting down...\n');
-  isRunning = false;
-});
-
 (async () => {
   const dataArr = await readFile(pathToFile);
 
