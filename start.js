@@ -1,10 +1,10 @@
 'use strict';
 
 const fs = require('fs').promises;
-const https = require('https');
-
+const axios = require('axios');
 const data = require ('./config.json');
-const pathToFile = data["pathToFile"],
+
+const pathToFile = data["pathToFile"], // do not forget to switch prod/debug
     url = data["url"];
 
 async function readFile(path) {
@@ -17,45 +17,21 @@ async function readFile(path) {
   }
 }
 
-function postToNode(phrase) {
-  return new Promise((resolve, reject) => {
-    const postData = JSON.stringify({
-      messages: [
-        { role: "system", content: "You are a helpful assistant." },
-        { role: "user", content: phrase }
-      ]
-    });
-
-    const options = {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(postData)
-      }
-    };
-
-    const req = https.request(url, options, (res) => {
-      let data = '';
-
-      res.on('data', (chunk) => {
-        data += chunk;
+async function postToNode(phrase) {
+  return await axios.post(url, {
+    messages: [
+      { role: "system", content: "You are a helpful assistant." },
+      { role: "user", content: phrase }
+    ]
+  })
+      .then(response => {
+        let str = JSON.stringify(response.data["choices"][0].message.content);
+        console.log(`${str.substring(3, str.length-1)}\n`);
+      })
+      .catch(error => {
+        console.error(`Error posting to node: ${error.message}\n`);
+        throw error;
       });
-
-      res.on('end', () => {
-        console.log(`${data}\n`);
-        resolve();
-      });
-    });
-
-    req.on('error', (e) => {
-      console.error(`Error posting to node: ${e}`);
-      reject(e);
-    });
-
-    req.write(postData);
-    req.end();
-  });
 }
 
 let isRunning = true;
