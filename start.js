@@ -26,7 +26,8 @@ async function postToNode(phrase) {
   })
       .then(response => {
         let str = JSON.stringify(response.data["choices"][0].message.content);
-        console.log(`${str.substring(3, str.length-1)}\n`);
+        str = str.substring(3, str.length-1);
+        console.log(`${str}\n`);
       })
       .catch(error => {
         console.error(`Error posting to node: ${error.message}\n`);
