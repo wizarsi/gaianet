@@ -6,14 +6,39 @@ const data = require ('./config.json');
 
 const pathToFile = data["pathToFile"], // do not forget to switch prod/debug
     url = data["url"];
+let modifiedString = '';
 
 async function readFile(path) {
   try {
     const data = await fs.readFile(path, { encoding: 'utf8' });
     return data.split('\n').filter(line => line.trim() !== '');
   } catch (error) {
-    console.error(`Error reading file: ${error}`);
+    console.error(`Error reading file: ${error.message}`);
     process.exit(1);
+  }
+}
+
+let proceedString = async (string) => {
+
+  const resultString = `${string[0]}${string[1]}${string[2]}`;
+  const charsCount = [1, 3];
+
+  let deepProceedString = (chars) => {
+     modifiedString = string
+        .substring(chars, string.length-1)
+        .replace(/\\n/g, ' ')
+        .replace(/\\n\\n/g, ' ')
+        .replace(/\\"/g, '"')
+        .replace(/ {2,}/g, " ");
+    return modifiedString;
+  }
+
+  if (resultString === '": ') {
+    deepProceedString(charsCount[1]);
+    return modifiedString;
+  }else{
+    deepProceedString(charsCount[0]);
+    return modifiedString;
   }
 }
 
@@ -25,12 +50,12 @@ async function postToNode(phrase) {
     ]
   })
       .then(response => {
-        let str = JSON.stringify(response.data["choices"][0].message.content);
-        str = str.substring(3, str.length-1);
-        console.log(`${str}\n`);
+        let string = JSON
+            .stringify(response.data["choices"][0].message.content);
+        proceedString(string);
+        console.log(`${modifiedString}\n`);
       })
       .catch(error => {
-        console.error(`Error posting to node: ${error.message}\n`);
         throw error;
       });
 }
