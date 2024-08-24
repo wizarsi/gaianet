@@ -1,22 +1,12 @@
-'use strict';
+import config from "./config.json" with {type: "json"};
+import axios from "axios";
+import _ from "lodash";
+import fs from "fs";
+import {PerformanceObserver, performance} from "perf_hooks";
 
-const fs = require('fs').promises;
-const axios = require('axios');
-const data = require ('./config.json');
 
-const pathToFile = data["pathToFile"], // do not forget to switch prod/debug
-    url = data["url"];
-let modifiedString = '';
+const CHUNK_SIZE = 5;
 
-async function readFile(path) {
-  try {
-    const data = await fs.readFile(path, { encoding: 'utf8' });
-    return data.split('\n').filter(line => line.trim() !== '');
-  } catch (error) {
-    console.error(`Error reading file: ${error.message}`);
-    process.exit(1);
-  }
-}
 
 let proceedString = async (string) => {
 
@@ -24,8 +14,8 @@ let proceedString = async (string) => {
   const charsCount = [1, 3];
 
   let deepProceedString = (chars) => {
-     modifiedString = string
-        .substring(chars, string.length-1)
+    let modifiedString = string
+        .substring(chars, string.length - 1)
         .replace(/\\n/g, ' ')
         .replace(/\\n\\n/g, ' ')
         .replace(/\\"/g, '"')
@@ -33,47 +23,78 @@ let proceedString = async (string) => {
     return modifiedString;
   }
 
-  if (resultString === '": ') {
-    deepProceedString(charsCount[1]);
-    return modifiedString;
-  }else{
-    deepProceedString(charsCount[0]);
-    return modifiedString;
-  }
+  return deepProceedString((resultString === '": ') ? charsCount[1] : charsCount[0]);
 }
 
 async function postToNode(phrase) {
-  return await axios.post(url, {
-    messages: [
-      { role: "system", content: "You are a helpful assistant." },
-      { role: "user", content: phrase }
-    ]
+  return new Promise((nodeTaskCompleted, reject) => {
+    return axios.post(config.url, {
+      messages: [
+        {role: "system", content: "You are a helpful assistant."},
+        {role: "user", content: phrase}
+      ]
+    })
+        .then(async (response) => {
+          try {
+            let string = JSON.stringify(response.data["choices"][0].message.content);
+            let result = await proceedString(string);
+            nodeTaskCompleted(result);
+
+          } catch (error) {
+            reject(error);
+          }
+
+
+        })
+        .catch(error => {
+          reject(error);
+          ;
+        });
   })
-      .then(response => {
-        let string = JSON
-            .stringify(response.data["choices"][0].message.content);
-        proceedString(string);
-        console.log(`${modifiedString}\n`);
-      })
-      .catch(error => {
-        throw error;
-      });
+
 }
 
-let isRunning = true;
+
 
 (async () => {
-  const dataArr = await readFile(pathToFile);
+  let phrasesArray = fs.readFileSync(config.pathToFile).toString().split('\n').filter(line => line.trim() !== '');
 
-  while (isRunning) {
-    for (const phrase of dataArr) {
-      try {
-        await postToNode(phrase);
-        // Add a delay to avoid overwhelming the server
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      } catch (error) {
-        console.error(`Error handling phrase "${phrase}": ${error}`);
+
+  let roundCounter = 0;
+
+  while (true) {
+    let chunks = _.chunk(_.shuffle(phrasesArray), CHUNK_SIZE);
+
+    for (const chunk of chunks) {
+
+      let chunkStarted = performance.now();
+
+      let promises = [];
+      roundCounter++;
+
+      for (const phrase of chunk) {
+        promises.push(
+            postToNode(phrase)
+        )
       }
+
+
+      console.info(`>> Round: ${roundCounter} | Requests sent: ${chunk.length}.`);
+      let results = await Promise.all(promises).catch((err) => {
+        console.error('fail', err);
+      });
+      let chunkFinished = performance.now();
+
+      let elapsed_time = chunkFinished - chunkStarted;
+      console.info(`<< Round: ${roundCounter} | Responses received::  ${chunk.length}. Execution time: ${elapsed_time / 1000} seconds`);
+
+      console.log('_____________________________________________________');
+
+      // console.log(`Chunk result: ${results}\n`);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
     }
   }
+
+
 })();
