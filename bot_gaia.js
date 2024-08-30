@@ -2,11 +2,10 @@ import config from "./config.json" with {type: "json"};
 import axios from "axios";
 import _ from "lodash";
 import fs from "fs";
-import {PerformanceObserver, performance} from "perf_hooks";
+import {performance} from "perf_hooks";
 
 
 const CHUNK_SIZE = 5;
-
 
 let proceedString = async (string) => {
 
@@ -14,13 +13,12 @@ let proceedString = async (string) => {
   const charsCount = [1, 3];
 
   let deepProceedString = (chars) => {
-    let modifiedString = string
+    return string
         .substring(chars, string.length - 1)
         .replace(/\\n/g, ' ')
         .replace(/\\n\\n/g, ' ')
         .replace(/\\"/g, '"')
         .replace(/ {2,}/g, " ");
-    return modifiedString;
   }
 
   return deepProceedString((resultString === '": ') ? charsCount[1] : charsCount[0]);
@@ -41,34 +39,23 @@ async function postToNode(phrase) {
             nodeTaskCompleted(result);
 
           } catch (error) {
-            reject(error);
+            reject(`${error.message}`);
           }
-
-
         })
         .catch(error => {
-          reject(error);
-          ;
+          reject(`${error.message}`);
         });
   })
-
 }
-
-
 
 (async () => {
   let phrasesArray = fs.readFileSync(config.pathToFile).toString().split('\n').filter(line => line.trim() !== '');
-
-
   let roundCounter = 0;
 
   while (true) {
     let chunks = _.chunk(_.shuffle(phrasesArray), CHUNK_SIZE);
-
     for (const chunk of chunks) {
-
       let chunkStarted = performance.now();
-
       let promises = [];
       roundCounter++;
 
@@ -78,23 +65,20 @@ async function postToNode(phrase) {
         )
       }
 
-
       console.info(`>> Round: ${roundCounter} | Requests sent: ${chunk.length}.`);
       let results = await Promise.all(promises).catch((err) => {
-        console.error('fail', err);
+        console.error(`<< Round: ${roundCounter} | `, err);
       });
       let chunkFinished = performance.now();
 
       let elapsed_time = chunkFinished - chunkStarted;
       console.info(`<< Round: ${roundCounter} | Responses received::  ${chunk.length}. Execution time: ${elapsed_time / 1000} seconds`);
 
-      console.log('_____________________________________________________');
+      console.log('_____________________________________________________\n');
 
       // console.log(`Chunk result: ${results}\n`);
       await new Promise(resolve => setTimeout(resolve, 1000));
 
     }
   }
-
-
 })();
