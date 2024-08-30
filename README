@@ -4,4 +4,4 @@ Change link to yours
 
 run: 
     bash: ./start.sh
-    js:   node start.js
+    js:   node bot_gaia.js
