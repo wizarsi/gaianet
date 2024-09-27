@@ -1,7 +1,0 @@
-Simple script for posting to gaianet node. Takes phrases from file and posts the one by one to node. Infinite loop.
-
-Change link to yours
-
-run: 
-    bash: ./start.sh
-    js:   node bot_gaia.js
