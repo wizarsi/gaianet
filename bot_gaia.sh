@@ -6,8 +6,14 @@ file=($(jq -r '.pathToFile' config.json))
 # Alternative debug file
 # file="debug_phrases.txt"
 
-# URL for the API
-url=($(jq -r '.url' config.json))
+# Ensure API_URL environment variable is set
+if [[ -z "${API_URL}" ]]; then
+    echo "Error: API_URL environment variable is not set."
+    exit 1
+fi
+
+# URL for the API (only from environment variable)
+url=$API_URL
 
 # Function to send the API request
 send_request() {
